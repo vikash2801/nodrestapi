@@ -18,7 +18,10 @@ let cors = require('cors')
 app.use(cors())
 
 /* --------------------------------------------------------endpoints------------------------------------------------------------- */
-
+//starting endpoint
+app.get('/', (req,res)=>{
+    res.send("Welcome on Express");
+})
 
 //list of courses
 app.get('/courseDetail',(req,res)=>{
