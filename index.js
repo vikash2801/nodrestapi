@@ -1,12 +1,15 @@
 let express = require('express')
 let app = express();
+
 let dotEnv = require('dotenv');
 dotEnv.config();
+
 let port = process.env.PORT || 3400;
+
 let mongo = require('mongodb')
 let mongoClient = mongo.MongoClient;
 let mongoUrl = process.env.LiveMongo;
-//let mongoUrl = process.env.MongoURL;
+let mongoUrl = process.env.MongoURL;
 let db;
 
 let bodyParser = require('body-parser');
@@ -17,10 +20,10 @@ app.use(bodyParser.json())
 let cors = require('cors')
 app.use(cors())
 
-/* --------------------------------------------------------endpoints------------------------------------------------------------- */
+/* =============================================course collection========================================================= */
 //starting endpoint
-app.get('/', (req,res)=>{
-    res.send("Welcome on Express");
+app.get('/',(req,res)=>{
+     res.send("Welcome on Express");
 })
 
 //list of courses
@@ -33,14 +36,31 @@ app.get('/courseDetail',(req,res)=>{
     });
 })
 
+//course wrt courseSubCategory
+/* app.get('/courseDetail/courseSubCat/:subcategory',(req,res)=>{
+    let subCategory = req.params.subcategory;
+
+    let query = {};
+
+    if(subCategory){
+        query = {"course_subcategory": subCategory}
+    }
+    //output the result
+    db.collection('course').find(query).toArray((err, result)=>{
+        if (err) throw err;
+         res.send(result);        
+    });
+})
+ */
+
 //course wrt courseTopic
-app.get('/courseDetail/courseType/:course',(req,res)=>{
-    let course = req.params.course;
+app.get('/courseDetail/courseType/:courseTopic',(req,res)=>{
+    let CourseTopic = Number(req.params.courseTopic);
 
     let query = {};
 
-    if(course){
-        query = {course_type: course}
+    if(CourseTopic){
+        query = {"typeId": CourseTopic}
     }
     //output the result
     db.collection('course').find(query).toArray((err, result)=>{
@@ -49,14 +69,14 @@ app.get('/courseDetail/courseType/:course',(req,res)=>{
     });
 })
 
-//course wrt rating
-app.get('/courseDetail/rating/:rating',(req,res)=>{
-    let rat = req.params.rating;
+//course wrt uniqueId
+app.get('/courseDetail/:courseId',(req,res)=>{
+    let CourseId = Number(req.params.courseId);
 
     let query = {};
 
-    if(rat){
-        query = {"course_details.rating":{$gt: rat}}
+    if(CourseId){
+        query = {"courseID": CourseId}
     }
     //output the result
     db.collection('course').find(query).toArray((err, result)=>{
@@ -64,14 +84,34 @@ app.get('/courseDetail/rating/:rating',(req,res)=>{
          res.send(result);        
     });
 })
+
+//studentCourse wrt reviewCount
+app.get('/courseDetail/studentCourse/:count',(req,res)=>{
+    
+    let query = {};
+
+    let Cnt = Number(req.params.count);
+
+    if(Cnt){
+        query = {"course_details.reviewCount":{$gt:Cnt}};
+    }
+    console.log(query)
+
+    //output the result
+    db.collection('course').find(query).toArray((err, result)=>{
+        if (err) throw err;
+         res.send(result);        
+    });
+})
+
 
 //Filter options
-app.get('/filter/:courseCategory',(req,res) => {
+app.get('/courseDetail/courseCat/:courseCategory',(req,res) => {
     let query = {};
     let sort = {"course_details.cost":1}
     let courseCategory = req.params.courseCategory;
-    let courseType = req.query.courseType;
-    let lang = req.query.lang;
+    //let courseType = req.query.courseType;
+    let rating = Number(req.query.rating);
     let lcost = Number(req.query.lcost);
     let hcost = Number(req.query.hcost);
 
@@ -79,11 +119,11 @@ app.get('/filter/:courseCategory',(req,res) => {
         sort={"course_details.cost":req.query.sort}
     }
     console.log("course_category:" + courseCategory);
-    if(hcost && lcost && courseType){
+    if(hcost && lcost && rating){
         query={
-            "course_category":courseCategory,
-            "course_type":courseType,
-            $and:[{"course_details.cost":{$gt:lcost,$lt:hcost}}]
+            "course_category": courseCategory,
+            $and:[{"course_details.cost":{$gt:lcost,$lt:hcost}}],
+            "course_details.rating":{$gt:rating}
         }
     } 
     else if(hcost && lcost){
@@ -92,17 +132,17 @@ app.get('/filter/:courseCategory',(req,res) => {
             $and:[{"course_details.cost":{$gt:lcost,$lt:hcost}}]
         }
     }
-    else if(courseType){
+    else if(rating){
         query={
             "course_category":courseCategory,
-            "course_type":courseType
+            $and:[{"course_details.rating":{$gt:rating}}]
         }
-    }else if(lang){
+    }/* else if(lang){
         query={
             "course_category":courseCategory,
             "course_details.language": lang
         }
-    }else{
+    } */else{
         query={
             "course_category":courseCategory
         }
@@ -114,7 +154,30 @@ app.get('/filter/:courseCategory',(req,res) => {
     })
 })
 
+//placeorder
+app.post('/courseItem',(req,res) => {
+    if(Array.isArray(req.body.id)){
+        db.collection('course').find({"courseID":{$in:req.body.id}}).toArray((err,result) => {
+            if(err) throw err;
+            res.send(result)
+        })
+    }else{
+        res.send({"errMsg": "Invalid Input"})
+    }
+    
+})
+/* =============================================category collection========================================================= */
 
+//get category details
+app.get('/categoryJson',(req,res)=>{
+    let query = {};
+    db.collection('category').find(query).toArray((err,result)=>{
+        if(err) throw err;
+        res.send(result)
+    })
+})
+
+/* =============================================orders collection========================================================= */
 //place Order
 app.post('/placeOrder',(req,res) => {
     db.collection('orders').insertOne(req.body,(err,result) => {
@@ -140,8 +203,8 @@ app.get('/orders',(req,res)=>{
 
 //update the product status after payment
 app.put('/updateOrder/:id',(req,res)=>{
-    let OrderId = mongo.ObjectId(req.params.id);
-    let query = {_id: OrderId}
+    let OrderId = Number(req.params.id);
+    let query = {"courseID": OrderId}
     
     db.collection('orders').updateOne(
         query,
@@ -159,8 +222,8 @@ app.put('/updateOrder/:id',(req,res)=>{
 
 //Delete the order from cart
 app.delete('/deleteOrder/:id',(req,res)=>{
-    let OrderId = mongo.ObjectId(req.params.id);
-    let query = {_id: OrderId}
+    let OrderId = Number(req.params.id);
+    let query = {"courseID": OrderId}
     
     db.collection('orders').deleteOne(query,(err,result)=>{
             if(err) throw err;
@@ -169,7 +232,7 @@ app.delete('/deleteOrder/:id',(req,res)=>{
     
 })
 
-
+/* =============================================MongoDB Database connection========================================================= */
 
 //connnection with db
 mongoClient.connect(mongoUrl,(err,client)=>{
