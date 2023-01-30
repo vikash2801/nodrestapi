@@ -9,7 +9,7 @@ let port = process.env.PORT || 3400;
 let mongo = require('mongodb')
 let mongoClient = mongo.MongoClient;
 let mongoUrl = process.env.LiveMongo;
-let mongoUrl = process.env.MongoURL;
+//let mongoUrl = process.env.MongoURL;
 let db;
 
 let bodyParser = require('body-parser');
