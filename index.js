@@ -225,7 +225,7 @@ app.put('/updateOrder/:id',(req,res)=>{
 //Delete the order from cart
 app.delete('/deleteOrder/:id',(req,res)=>{
     let OrderId = Number(req.params.id);
-    let query = {"courseID": OrderId}
+    let query = {"id": OrderId}
     
     db.collection('orders').deleteOne(query,(err,result)=>{
             if(err) throw err;
