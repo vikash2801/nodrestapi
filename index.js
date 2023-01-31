@@ -204,7 +204,7 @@ app.get('/orders',(req,res)=>{
 //after payment
 
 //update the product status after payment
-app.put('/updateOrder/:id',(req,res)=>{
+app.patch('/updateOrder/:id',(req,res)=>{
     let OrderId = Number(req.params.id);
     let query = {"id": OrderId}
     
