@@ -95,7 +95,7 @@ app.get('/courseDetail/studentCourse/:count',(req,res)=>{
     if(Cnt){
         query = {"course_details.reviewCount":{$gt:Cnt}};
     }
-    console.log(query)
+    //console.log(query)
 
     //output the result
     db.collection('course').find(query).toArray((err, result)=>{
@@ -154,7 +154,7 @@ app.get('/courseDetail/courseCat/:courseCategory',(req,res) => {
     })
 })
 
-//placeorder
+//get course details of given courseIDs 
 app.post('/courseItem',(req,res) => {
     if(Array.isArray(req.body.id)){
         db.collection('course').find({"courseID":{$in:req.body.id}}).toArray((err,result) => {
@@ -178,7 +178,7 @@ app.get('/categoryJson',(req,res)=>{
 })
 
 /* =============================================orders collection========================================================= */
-//place Order
+//place the Order for added course items in cart
 app.post('/placeOrder',(req,res) => {
     db.collection('orders').insertOne(req.body,(err,result) => {
         if(err) throw err;
@@ -186,7 +186,7 @@ app.post('/placeOrder',(req,res) => {
     })
 })
 
-//list the orders
+//list the orders details
 app.get('/orders',(req,res)=>{
     let email = req.query.email;
     let query = {};
@@ -199,12 +199,14 @@ app.get('/orders',(req,res)=>{
     })
 })
 
+
+
 //after payment
 
 //update the product status after payment
 app.put('/updateOrder/:id',(req,res)=>{
     let OrderId = Number(req.params.id);
-    let query = {"courseID": OrderId}
+    let query = {"id": OrderId}
     
     db.collection('orders').updateOne(
         query,
